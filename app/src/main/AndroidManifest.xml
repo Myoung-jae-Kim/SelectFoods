@@ -27,11 +27,8 @@
 
         <meta-data
             android:name="com.kakao.sdk.AppKey"
-            android:value="5dd8d7fc4be3fba8cac36d171e2cc90e" />
-
-        <!--<meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBcEdJ3sCKHEtT6FKuBru5dVEvRMuQMi6c" />-->
+            android:value="${kakaomapsApiKey}" />
+        
 
     </application>
 

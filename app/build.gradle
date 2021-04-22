@@ -3,6 +3,10 @@ plugins {
     id 'kotlin-android'
 }
 
+/*Properties properties = new Properties()
+properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def kakaoMapApiKey = properties.getProperty('kakao_api_key')*/
+
 android {
     compileSdkVersion 30
     buildToolsVersion "30.0.3"
@@ -13,8 +17,15 @@ android {
         targetSdkVersion 30
         versionCode 1
         versionName "1.0"
+        Properties properties = new Properties()
+        if (rootProject.file("local.properties").exists()) {
+            properties.load(rootProject.file("local.properties").newDataInputStream())
+        }
 
+        manifestPlaceholders = [ kakaomapsApiKey : properties.getProperty("kakao_api_key", "") ]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        //manifestPlaceholders = [kakaoMapApiKey:kakaoMapApiKey]
+       // buildConfigField "String", "KAKAO_API_KEY", properties['kakao_api_key']
     }
 
     buildTypes {
