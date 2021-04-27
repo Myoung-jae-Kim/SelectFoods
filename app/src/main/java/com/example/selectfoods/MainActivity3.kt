@@ -13,66 +13,70 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+//import com.example.mechacat.databinding.ActivityMainBinding
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.RelativeLayout
 import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.MutableLiveData
 import com.google.android.gms.maps.model.LatLng
 import net.daum.mf.map.api.MapPOIItem
 import net.daum.mf.map.api.MapView
 import net.daum.mf.map.api.MapPoint
 import java.lang.NullPointerException
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.GET
+import retrofit2.http.Header
+import retrofit2.http.Query
 
-/*
-class LocationHelper {
 
-    val LOCATION_REFRESH_TIME = 3000 // 3 seconds. The Minimum Time to get location update
-    val LOCATION_REFRESH_DISTANCE = 30 // 30 meters. The Minimum Distance to be changed to get location update
-    val MY_PERMISSIONS_REQUEST_LOCATION = 100
-
-    var myLocationListener: MyLocationListener? = null
-
-    interface MyLocationListener {
-        fun onLocationChanged(location: Location)
+//카카오 카테고리 코드 REST API
+/*class KakaoApi {
+    companion object {
+        const val BASE_URL = "https://dapi.kakao.com/"
+        const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f"
     }
-
-    fun startListeningUserLocation(context: Context, myListener: MyLocationListener) {
-        myLocationListener = myListener
-
-        val mLocationManager = context.getSystemService(LOCATION_SERVICE) as LocationManager
-
-        val mLocationListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                //your code here
-                myLocationListener!!.onLocationChanged(location) // calling listener to inform that updated location is available
-            }
-            override fun onStatusChanged(provider: String, status: Int, extras: Bundle) {}
-            override fun onProviderEnabled(provider: String) {}
-            override fun onProviderDisabled(provider: String) {}
-        }
-// check for permissions
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(context,Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_REFRESH_TIME.toLong(),LOCATION_REFRESH_DISTANCE.toFloat(), mLocationListener)
-        } else {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, Manifest.permission.ACCESS_FINE_LOCATION) || ActivityCompat.shouldShowRequestPermissionRationale(context as Activity,Manifest.permission.ACCESS_COARSE_LOCATION)) {
-                // permission is denined by user, you can show your alert dialog here to send user to App settings to enable permission
-            } else {
-                ActivityCompat.requestPermissions(context,arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),MY_PERMISSIONS_REQUEST_LOCATION)
-            }
-        }
-    }
-
 }
-*/
 
+interface KakaoApiService {
+    @GET("/v2/local/search/category.json")
+    //현재 내 위치 주변 음식점 가져오려면 y & x & 600, FD6
+    fun getKakaoAddress(
+            @Header("Authorization") key: String,
+            @Query("query") address: String
+    ): Call<KakaoData>
+}
+
+object KakaoApiRetrofitClient {
+    private val retrofit: Retrofit.Builder by lazy {
+        Retrofit.Builder()
+                .baseUrl(KakaoApi.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create())
+    }
+
+    val apiService: KakaoApiService by lazy {
+        retrofit
+                .build()
+                .create(KakaoApiService::class.java)
+    }
+}*/
 
 class MainActivity3 : AppCompatActivity() {
-    /*private lateinit var locationManager: LocationManager
-    private val locationPermissionCode = 2
-    private lateinit var toggleButton: ToggleButton*/
+   // private lateinit var binding: ActivityMainBinding
+
+    companion object {
+        const val BASE_URL = "https://dapi.kakao.com/"
+        const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f" // Rest api 키
+    }
+
     var mLocationManager: LocationManager? = null
     var mLocationListener: LocationListener? = null
     val PERMISSIONS_REQUEST_CODE = 100
@@ -80,42 +84,10 @@ class MainActivity3 : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        //binding = ActivityMain
         setContentView(R.layout.activity_main3)
 
- /*       toggleButton = findViewById(R.id.toggle1) as ToggleButton
-
-        //LocationManager 객체 생성
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-
-        toggleButton.setOnClickListener {
-            try {
-                if (toggleButton.isChecked()) {
-                    //gps 제공자의 정보가 바뀌면 콜백 리스너
-                    locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 100, 1, mLocationListener)
-                    locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 100, 1, mLocationListener)
-                } else {
-                    locationManager.removeUpdates(mLocationListener) // 미수신시 자원 해제
-                }
-            } catch (ex : SecurityException) {
-
-            }
-        }
-*/
-/*        mLocationManager = mContext.getSystemService(LOCATION_SERVICE) as LocationManager
-        mLocationListener = object : LocationListener {
-            override fun onLocationChanged(location: Location) {
-                var lat = 0.0
-                var lng = 0.0
-                if (location != null) {
-                    lat = location.latitude
-                    lng = location.longitude
-                    Log.d("lat + lng", "Lat: ${lat} , lng: ${lng}")
-                }
-                //var currentLocation = LatLng(lat, lng)
-
-                mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(lat, lng), true)
-            }
-        }*/
+        searchKeyword("식당")
 
         var toggleButton = findViewById(R.id.toggle1) as ToggleButton
         val mapView = MapView(this)
@@ -124,11 +96,19 @@ class MainActivity3 : AppCompatActivity() {
         val mapViewContainer = findViewById<ConstraintLayout>(R.id.map_view) as ViewGroup
         mapViewContainer.addView(mapView)
 
+        //callKakaoRestApi("카카오")
         //버튼 클릭하면 현재 위치로
+
+        val button1 = findViewById<Button>(R.id.toggle2)
+        button1.setOnClickListener {
+            searchKeyword("식당")
+        }
+
         toggleButton.setOnClickListener {
+           // searchKeyword("식당")
             val permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
             if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-                val lm : LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+                val lm : LocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
                 try {
                     val userNowLocation : Location? =
                         lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
@@ -164,5 +144,32 @@ class MainActivity3 : AppCompatActivity() {
             }
         }
 
+    }
+
+    //키워드 검색 함수
+    private fun searchKeyword(keyword: String) {
+        val retrofit = Retrofit.Builder() // Retrofit 구성
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val  api = retrofit.create(KakaoAPI::class.java) //통신 인터페이스를 객체로 생성
+        val call = api.getSearchKeyword(API_KEY, keyword) //검색 조건 입력
+
+        // API 서버에 요청
+        call.enqueue(object: Callback<ResultSearchKeyword> {
+            override fun onResponse(
+                call: Call<ResultSearchKeyword>,
+                response: Response<ResultSearchKeyword>
+            ) {
+                //통신 성공 (검색 결과는 response.body() 에 있음)
+                Log.d("Test", "Raw: ${response.raw()}")
+                Log.d("Test", "Body: ${response.body()}")
+            }
+
+            override fun onFailure(call: Call<ResultSearchKeyword>, t: Throwable) {
+                //통신 실패
+                Log.w("MainActivity3", "통신 실패: ${t.message}")
+            }
+        })
     }
 }

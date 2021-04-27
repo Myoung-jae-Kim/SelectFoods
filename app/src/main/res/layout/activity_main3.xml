@@ -19,6 +19,14 @@
             android:layout_height="wrap_content"
             android:textOff="위치정보수신시작"
             android:textOn="위치정보수신종료" />
+
+        <Button
+            android:id="@+id/toggle2"
+            android:layout_width="238dp"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/toggle1"
+            android:textOff="카카오키워드 api 확인"
+             />
     </RelativeLayout>
 
 
