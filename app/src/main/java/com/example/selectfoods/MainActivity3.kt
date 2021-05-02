@@ -77,6 +77,7 @@ class MainActivity3 : AppCompatActivity() {
         const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f" // Rest api 키
     }
 
+    private val listItems = arrayListOf<ListItem>() //검색
     var mLocationManager: LocationManager? = null
     var mLocationListener: LocationListener? = null
     val PERMISSIONS_REQUEST_CODE = 100
@@ -91,7 +92,7 @@ class MainActivity3 : AppCompatActivity() {
 
         var toggleButton = findViewById(R.id.toggle1) as ToggleButton
         val mapView = MapView(this)
-        val  marker = MapPOIItem()
+        val marker = MapPOIItem()
 
         val mapViewContainer = findViewById<ConstraintLayout>(R.id.map_view) as ViewGroup
         mapViewContainer.addView(mapView)
@@ -153,7 +154,7 @@ class MainActivity3 : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
         val  api = retrofit.create(KakaoAPI::class.java) //통신 인터페이스를 객체로 생성
-        val call = api.getSearchKeyword(API_KEY, keyword) //검색 조건 입력
+        val  call = api.getSearchKeyword(API_KEY, keyword) //검색 조건 입력
 
         // API 서버에 요청
         call.enqueue(object: Callback<ResultSearchKeyword> {
@@ -162,6 +163,7 @@ class MainActivity3 : AppCompatActivity() {
                 response: Response<ResultSearchKeyword>
             ) {
                 //통신 성공 (검색 결과는 response.body() 에 있음)
+                addItemsAndMarkers(response.body())
                 Log.d("Test", "Raw: ${response.raw()}")
                 Log.d("Test", "Body: ${response.body()}")
             }
@@ -171,5 +173,51 @@ class MainActivity3 : AppCompatActivity() {
                 Log.w("MainActivity3", "통신 실패: ${t.message}")
             }
         })
+    }
+
+    //검색 결과 처리
+    private fun addItemsAndMarkers(searchResult: ResultSearchKeyword?){
+        if(!searchResult?.documents.isNullOrEmpty()) {
+            //검색 결과가 있으면
+            listItems.clear() //리스트 초기화
+            //지도의 마커 모두 제거
+
+            for(document in searchResult!!.documents) {
+                //결과 추가가
+                val item = ListItem(document.place_name
+                                    ,document.road_address_name
+                                    ,document.address_name
+                                    ,document.x.toDouble()
+                                    ,document.y.toDouble())
+
+                listItems.add(item)
+
+                //지도에 마커 추가
+                val point = MapPOIItem()
+                point.apply {
+                    itemName = document.place_name
+                    mapPoint = MapPoint.mapPointWithGeoCoord(document.y.toDouble(),
+                            document.x.toDouble())
+                    markerType = MapPOIItem.MarkerType.BluePin
+                    selectedMarkerType = MapPOIItem.MarkerType.RedPin
+                }
+     //                   .mapView.addPOIItem(point)
+             //   Log.d("Test", "Raw: ${response.raw()}")
+                //KeyWord 검색 결과가 잘 나왔는지 Log
+                //마커에 넣어야 할 부분 (x,y,group_name or category_name 에서 스트링 검색해서 if(일식, 한식) )
+                //음식 종류 구분해서 일식집, 한식집, 중식집만 구분해서 나타날 수 있게
+                Log.d("Test1", "Body: ${document.place_name}")
+                Log.d("Test2", "Body: ${document.category_group_code}")
+                Log.d("Test3", "Body: ${document.category_group_name}")
+                Log.d("Test4", "Body: ${document.category_name}")
+                Log.d("Test5", "Body: ${document.x.toDouble()}")
+                Log.d("Test6", "Body: ${document.y.toDouble()}")
+           }
+                    //listAdapter.noti
+
+        } else {
+            //검색 결과 없음
+            Toast.makeText(this, "검색 결과가 없습니다.", Toast.LENGTH_SHORT).show()
+        }
     }
 }
