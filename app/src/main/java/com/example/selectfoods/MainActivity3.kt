@@ -2,6 +2,7 @@ package com.example.selectfoods
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.Intent
@@ -9,23 +10,26 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.content.Context.LOCATION_SERVICE
 import android.location.Location
+import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
-//import com.example.mechacat.databinding.ActivityMainBinding
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.RelativeLayout
 import android.widget.Toast
 import android.widget.ToggleButton
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+//import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.MutableLiveData
-import com.google.android.gms.maps.model.LatLng
+import com.example.selectfoods.databinding.ActivityMainBinding
+import kotlinx.android.synthetic.main.activity_main3.*
 import net.daum.mf.map.api.MapPOIItem
-import net.daum.mf.map.api.MapView
 import net.daum.mf.map.api.MapPoint
 import java.lang.NullPointerException
 import retrofit2.Call
@@ -33,9 +37,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Query
+
 
 
 //카카오 카테고리 코드 REST API
@@ -44,8 +46,8 @@ import retrofit2.http.Query
         const val BASE_URL = "https://dapi.kakao.com/"
         const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f"
     }
-}
-
+}*/
+/*
 interface KakaoApiService {
     @GET("/v2/local/search/category.json")
     //현재 내 위치 주변 음식점 가져오려면 y & x & 600, FD6
@@ -53,16 +55,18 @@ interface KakaoApiService {
             @Header("Authorization") key: String,
             @Query("query") address: String
     ): Call<KakaoData>
-}
+}*/
 
+/*
 object KakaoApiRetrofitClient {
     private val retrofit: Retrofit.Builder by lazy {
         Retrofit.Builder()
                 .baseUrl(KakaoApi.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
     }
+*/
 
-    val apiService: KakaoApiService by lazy {
+/*    val apiService: KakaoApiService by lazy {
         retrofit
                 .build()
                 .create(KakaoApiService::class.java)
@@ -70,91 +74,191 @@ object KakaoApiRetrofitClient {
 }*/
 
 class MainActivity3 : AppCompatActivity() {
-   // private lateinit var binding: ActivityMainBinding
-
     companion object {
         const val BASE_URL = "https://dapi.kakao.com/"
         const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f" // Rest api 키
     }
 
-    private val listItems = arrayListOf<ListItem>() //검색
+//    private lateinit var binding : ActivityMainBinding
+    private val ACCESS_FINE_LOCATION = 1000
+
+    private val listItems = arrayListOf<ListItem>() //검색결과를 담는 리스트
+//    private lateinit val mapView : MapView
     var mLocationManager: LocationManager? = null
     var mLocationListener: LocationListener? = null
     val PERMISSIONS_REQUEST_CODE = 100
     var REQUIRED_PERMISSIONS = arrayOf<String>( Manifest.permission.ACCESS_FINE_LOCATION)
+//    val mapView = MapView(this)
+    val marker = MapPOIItem()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //binding = ActivityMain
+       // binding = ActivityMainBinding.inflate()
+       // val view = binding.root
         setContentView(R.layout.activity_main3)
+        //setContentView(view)
 
-        searchKeyword("식당")
-
-        var toggleButton = findViewById(R.id.toggle1) as ToggleButton
-        val mapView = MapView(this)
-        val marker = MapPOIItem()
-
-        val mapViewContainer = findViewById<ConstraintLayout>(R.id.map_view) as ViewGroup
-        mapViewContainer.addView(mapView)
-
-        //callKakaoRestApi("카카오")
-        //버튼 클릭하면 현재 위치로
-
-        val button1 = findViewById<Button>(R.id.toggle2)
-        button1.setOnClickListener {
-            searchKeyword("식당")
+        //위치추적 버튼
+        btn_start.setOnClickListener {
+            if (checkLocationService()) {
+                //GPS가 켜져있을 때
+                permissionCheck()
+            } else {
+                //GPS가 꺼져있을 때
+                Toast.makeText(this, "GPS를 켜주세요", Toast.LENGTH_SHORT).show()
+            }
         }
 
-        toggleButton.setOnClickListener {
-           // searchKeyword("식당")
-            val permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-            if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-                val lm : LocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
-                try {
-                    val userNowLocation : Location? =
-                        lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
-                    val  uLatitude = userNowLocation!!.latitude
-                    val  uLongitude = userNowLocation!!.longitude
-                    val uNowPosition = MapPoint.mapPointWithGeoCoord(uLatitude,uLongitude)
-                    mapView.setMapCenterPoint(uNowPosition,true)
-
-                    marker.itemName = "내 위치"
-                    marker.tag = 0
-                    marker.mapPoint = uNowPosition
-                    marker.markerType = MapPOIItem.MarkerType.BluePin
-
-                    //마커를 클릭했을 때
-                    marker.selectedMarkerType = MapPOIItem.MarkerType.RedPin
-                    mapView.addPOIItem(marker)
-
-                } catch (e: NullPointerException) {
-                    Log.e("Location_error", e.toString())
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                        ActivityCompat.finishAffinity(this)
-                    } else {
-                        ActivityCompat.finishAffinity(this)
-                    }
-
-                    val intent = Intent(this, MainActivity3::class.java)
-                    startActivity(intent)
-                    System.exit(0)
-                }
-            } else {
-                Toast.makeText(this, "위치 권한이 없습니다.", Toast.LENGTH_SHORT).show()
-                ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
-            }
+        //검색 시작
+        btn_search.setOnClickListener {
+            searchKeyword("식당")
         }
 
     }
 
+    //위치 권한 확인
+    private fun permissionCheck() {
+        val preference = getPreferences(MODE_PRIVATE)
+        val isFirstCheck = preference.getBoolean("isFirstPermissionCheck", true)
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            //권한이 없을 때
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.ACCESS_FINE_LOCATION)) {
+                //권한 거절 (한번 더 요청)
+                val builder = AlertDialog.Builder(this)
+                builder.setMessage("위치 권한을 허용해주세요.")
+                builder.setPositiveButton("확인") { dialog, which ->
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), ACCESS_FINE_LOCATION)
+                }
+                builder.setNegativeButton("취소") { dialog, which ->
+                    
+                }
+                builder.show()
+            } else {
+                if (isFirstCheck) {
+                    //최초 권한 요청
+                    preference.edit().putBoolean("isFirstPermissionCheck", false).apply()
+                    ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), ACCESS_FINE_LOCATION)
+                } else {
+                    //다시 묻지 않음 클릭 (앱 정보 화면으로 이동)
+                    val builder = AlertDialog.Builder(this)
+                    builder.setMessage("위치 권한을 허용해주세요.")
+                    builder.setPositiveButton("설정으로 이동") { dialog, which ->
+                        val  intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${packageName}"))
+                        startActivity(intent)
+                    }
+                    builder.setNegativeButton("취소") { dialog, which ->
+
+                    }
+                    builder.show()
+                }
+            }
+        } else {
+            //권한이 있는 상태
+            startTracking()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == ACCESS_FINE_LOCATION) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                //권한 요청 후 승인 (추적 시작)
+                Toast.makeText(this, "위치 권한이 승인되었습니다.", Toast.LENGTH_SHORT).show()
+                startTracking()
+            } else {
+                //권한 요청 후 거절됨 (재 요청)
+                Toast.makeText(this, "위치 권한이 거절되었습니다.", Toast.LENGTH_SHORT).show()
+                permissionCheck()
+            }
+        }
+    }
+
+    //GPS가 켜져있는지 확인
+    private fun checkLocationService(): Boolean {
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+    }
+
+    private fun startTracking() {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val lm : LocationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+            try {
+                val userNowLocation : Location? =
+                    lm.getLastKnownLocation(LocationManager.NETWORK_PROVIDER)
+                val  uLatitude = userNowLocation!!.latitude
+                val  uLongitude = userNowLocation!!.longitude
+                val uNowPosition = MapPoint.mapPointWithGeoCoord(uLatitude,uLongitude)
+                mapView.setMapCenterPoint(uNowPosition,true)
+
+                marker.itemName = "내 위치"
+                marker.tag = 0
+                marker.mapPoint = uNowPosition
+                marker.markerType = MapPOIItem.MarkerType.BluePin
+
+                //마커를 클릭했을 때
+                marker.selectedMarkerType = MapPOIItem.MarkerType.RedPin
+                mapView.addPOIItem(marker)
+
+            } catch (e: NullPointerException) {
+                Log.e("Location_error", e.toString())
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                    ActivityCompat.finishAffinity(this)
+                } else {
+                    ActivityCompat.finishAffinity(this)
+                }
+
+                val intent = Intent(this, MainActivity3::class.java)
+                startActivity(intent)
+                System.exit(0)
+            }
+        } else {
+            Toast.makeText(this, "위치 권한이 없습니다.", Toast.LENGTH_SHORT).show()
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
+        }
+    }
+
+        //callKakaoRestApi("카카오")
+        //버튼 클릭하면 현재 위치로
+
     //키워드 검색 함수
     private fun searchKeyword(keyword: String) {
+        val retrofit = Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val api = retrofit.create(KakaoAPI::class.java)
+        val call = api.getSearchKeyword(API_KEY, keyword)
+
+        call.enqueue(object : Callback<ResultSearchKeyword> {
+            override fun onResponse(
+                call: Call<ResultSearchKeyword>,
+                response: Response<ResultSearchKeyword>
+            ) {
+                addItemsAndMarkers(response.body())
+                Log.d("Test1", "Raw: ${response.raw()}")
+                Log.d("Test1", "Body: ${response.body()}")
+            }
+
+            override fun onFailure(call: Call<ResultSearchKeyword>, t: Throwable) {
+                Log.w("MainActivity3", "통신 실패: ${t.message}")
+            }
+        })
+    }
+
+/*    private fun searchKeyword(keyword: String) {
         val retrofit = Retrofit.Builder() // Retrofit 구성
             .baseUrl(BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-        val  api = retrofit.create(KakaoAPI::class.java) //통신 인터페이스를 객체로 생성
-        val  call = api.getSearchKeyword(API_KEY, keyword) //검색 조건 입력
+       // val api = retrofit.create(KakaoAPI::class.java) //통신 인터페이스를 객체로 생성
+        val api = retrofit.create(KakaoAPI::class.java)
+        val call = api.getSearchKeyword(API_KEY, keyword) //검색 조건 입력
 
         // API 서버에 요청
         call.enqueue(object: Callback<ResultSearchKeyword> {
@@ -163,7 +267,7 @@ class MainActivity3 : AppCompatActivity() {
                 response: Response<ResultSearchKeyword>
             ) {
                 //통신 성공 (검색 결과는 response.body() 에 있음)
-                addItemsAndMarkers(response.body())
+             //   addItemsAndMarkers(response.body())
                 Log.d("Test", "Raw: ${response.raw()}")
                 Log.d("Test", "Body: ${response.body()}")
             }
@@ -173,7 +277,7 @@ class MainActivity3 : AppCompatActivity() {
                 Log.w("MainActivity3", "통신 실패: ${t.message}")
             }
         })
-    }
+    }*/
 
     //검색 결과 처리
     private fun addItemsAndMarkers(searchResult: ResultSearchKeyword?){
@@ -201,7 +305,7 @@ class MainActivity3 : AppCompatActivity() {
                     markerType = MapPOIItem.MarkerType.BluePin
                     selectedMarkerType = MapPOIItem.MarkerType.RedPin
                 }
-     //                   .mapView.addPOIItem(point)
+                mapView.addPOIItem(point)
              //   Log.d("Test", "Raw: ${response.raw()}")
                 //KeyWord 검색 결과가 잘 나왔는지 Log
                 //마커에 넣어야 할 부분 (x,y,group_name or category_name 에서 스트링 검색해서 if(일식, 한식) )
@@ -213,7 +317,7 @@ class MainActivity3 : AppCompatActivity() {
                 Log.d("Test5", "Body: ${document.x.toDouble()}")
                 Log.d("Test6", "Body: ${document.y.toDouble()}")
            }
-                    //listAdapter.noti
+           //listItems.
 
         } else {
             //검색 결과 없음
