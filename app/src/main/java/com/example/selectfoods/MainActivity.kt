@@ -19,7 +19,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
-import com.google.android.gms.location.LocationServices
+//import com.google.android.gms.location.LocationServices
 import java.lang.Exception
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
