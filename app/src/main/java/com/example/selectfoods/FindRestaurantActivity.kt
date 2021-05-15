@@ -1,14 +1,12 @@
 package com.example.selectfoods
 
 import android.Manifest
-import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.Intent
 import android.location.LocationListener
 import android.location.LocationManager
-import android.content.Context.LOCATION_SERVICE
 import android.location.Location
 import android.net.Uri
 import android.os.Build
@@ -16,19 +14,10 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.provider.Settings
 import android.util.Log
-import android.view.ViewGroup
-import android.widget.Button
-import android.widget.RelativeLayout
 import android.widget.Toast
-import android.widget.ToggleButton
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-//import androidx.databinding.DataBindingUtil
-import androidx.lifecycle.MutableLiveData
-import com.example.selectfoods.databinding.ActivityMainBinding
-import kotlinx.android.synthetic.main.activity_main3.*
+import kotlinx.android.synthetic.main.activity_findrestaurant.*
 import net.daum.mf.map.api.MapPOIItem
 import net.daum.mf.map.api.MapPoint
 import java.lang.NullPointerException
@@ -39,16 +28,14 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 
-class MainActivity3 : AppCompatActivity() {
+class FindRestaurantActivity : AppCompatActivity() {
     companion object {
         const val BASE_URL = "https://dapi.kakao.com/"
         const val API_KEY = "KakaoAK b50fe2e41bb5f4ff3197aa3c62c0c67f" // Rest api 키
     }
 
-//    private lateinit var binding : ActivityMainBinding
     private val ACCESS_FINE_LOCATION = 1000
     private val listItems = arrayListOf<ListItem>() //검색결과를 담는 리스트
-//    private lateinit val mapView : MapView
     var mLocationManager: LocationManager? = null
     var mLocationListener: LocationListener? = null
     val PERMISSIONS_REQUEST_CODE = 100
@@ -60,10 +47,7 @@ class MainActivity3 : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-       // binding = ActivityMainBinding.inflate()
-       // val view = binding.root
-        setContentView(R.layout.activity_main3)
-        //setContentView(view)
+        setContentView(R.layout.activity_findrestaurant)
 
         //위치추적 버튼
         btn_start.setOnClickListener {
@@ -171,7 +155,7 @@ class MainActivity3 : AppCompatActivity() {
                     ActivityCompat.finishAffinity(this)
                 }
 
-                val intent = Intent(this, MainActivity3::class.java)
+                val intent = Intent(this, FindRestaurantActivity::class.java)
                 startActivity(intent)
                 System.exit(0)
             }
@@ -179,12 +163,11 @@ class MainActivity3 : AppCompatActivity() {
             Toast.makeText(this, "위치 권한이 없습니다.", Toast.LENGTH_SHORT).show()
             ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE)
         }
-        return Uposition(uLatitude, uLongitude) //Long 이 X고 Lati 가 Y 인데...왜 mapPointWithGeoCoord 에서는 반대로 해야 내 위치가 정확히 나올까...?
+        return Uposition(uLatitude, uLongitude)
     }
 
     private fun startTracking() {
         val (x, y) = getCurrentLocation()
-   //     Log.d("DoubletoStringmyPosition", x.toString() + " " + y.toString())
         val uNowPosition = MapPoint.mapPointWithGeoCoord(x,y)
         mapView.setMapCenterPoint(uNowPosition,true)
 
@@ -254,16 +237,8 @@ class MainActivity3 : AppCompatActivity() {
                     selectedMarkerType = MapPOIItem.MarkerType.RedPin
                 }
                 mapView.addPOIItem(point)
-             //   Log.d("Test", "Raw: ${response.raw()}")
-                //KeyWord 검색 결과가 잘 나왔는지 Log
                 //마커에 넣어야 할 부분 (x,y,group_name or category_name 에서 스트링 검색해서 if(일식, 한식) )
                 //음식 종류 구분해서 일식집, 한식집, 중식집만 구분해서 나타날 수 있게
-/*                Log.d("Test1", "Body: ${document.place_name}")
-                Log.d("Test2", "Body: ${document.category_group_code}")
-                Log.d("Test3", "Body: ${document.category_group_name}")
-                Log.d("Test4", "Body: ${document.category_name}")
-                Log.d("Test5", "Body: ${document.x.toDouble()}")
-                Log.d("Test6", "Body: ${document.y.toDouble()}")*/
            }
            //listItems.
 

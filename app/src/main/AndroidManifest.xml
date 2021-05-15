@@ -18,8 +18,8 @@
         android:theme="@style/Theme.SelectFoods"
         android:usesCleartextTraffic="true">
 
-        <activity android:name=".MainActivity3"/>
-        <activity android:name=".MainActivity2" />
+        <activity android:name=".FindRestaurantActivity"/>
+        <activity android:name=".SelectFoodsActivity" />
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
