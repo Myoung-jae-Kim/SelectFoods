@@ -13,7 +13,6 @@ interface KakaoAPI {
         @Header("Authorization") key: String, //카카오 API 인증키 (필수)
         @Query("query") query: String, //검색할 질의어 (필수)
         //매개변수 추가~ 내 주변으로 식당 구해야 하니까 카테고리 그룹, x,y, radius
-        //@Query("category_group_code") category: String,
         @Query("x") x:String,
         @Query("y") y:String,
         @Query("radius") radius:Int //단위 미터
